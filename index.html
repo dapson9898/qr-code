@@ -114,10 +114,14 @@
             <!-- MAX_FILE_SIZE (maximum file size in bytes) must precede the file input field used to upload the QR code image -->
             <!-- The "name" of the input field has to be "file" as it is the name of the POST parameter -->
             <form enctype="multipart/form-data" action="http://api.qrserver.com/v1/read-qr-code/" method="POST">
-                <input type="hidden" name="MAX_FILE_SIZE" value="1048576" />
-                Choose QR code image to read/scan: <input name="file" type="file" />
-                <input type="submit" value="Read QR code" />
+                <!-- <input type="hidden" name="MAX_FILE_SIZE" value="1048576" /> -->
+                Choose QR code image to read/scan: 
+                <input name="file" type="file" id="file"/>
+                <input type="submit" id="submitqr" value="Read QR code" />
             </form>
+            <div class="qrdecode">
+                <p id="qrResult"></p>
+            </div>
         </div>
         <div class="generator" id="generator">
             <h1>Generate QR</h1>
@@ -135,6 +139,7 @@
     </div>
 </body>
 <script>
+    // [{"type":"qrcode","symbol":[{"seq":0,"data":"Okay nah","error":null}]}]
 let scan = document.getElementById("scan")
 let generate = document.getElementById("generate")
 let scanDiv = document.getElementById("scanner")
@@ -144,6 +149,40 @@ let generateBtn = document.getElementById("generateBtn")
 let text = document.getElementById("textToGenerate")
 let qrInfo = document.getElementById("qr-info")
 let qrDownload = document.getElementById("qr-download")
+let submitqr = document.getElementById("submitqr")
+let file = document.getElementById("file")
+let qrResult = document.getElementById("qrResult")
+
+submitqr.addEventListener("click", async (event)=>{
+    event.preventDefault()
+    console.log("file 1",file.file);
+    file = file.files[0]
+    console.dir("file 2",file);
+
+    const formData = new FormData()
+    formData.append("file", file)
+    console.log(formData);
+    
+    try {
+        const response = await fetch('http://api.qrserver.com/v1/read-qr-code/', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+        let message = data[0]["symbol"][0]["data"]
+        qrResult.innerText = message
+        
+        // Handle the response
+        file.type = ""
+
+        console.log('Full response:', data);
+        console.log('Meaning:', message);
+    } catch (error) {
+        console.log(error.message);
+    }
+    
+})
 
 scan.addEventListener("click", ()=>{
     generateDiv.style.display = "none"
@@ -180,8 +219,9 @@ async function getqr(text) {
     fetchedqr = await fetch(url)
     if(fetchedqr.status == 200 ){
         qrimage.src = fetchedqr.url
-        qrDownload.innerHTML = `
-        <a href=${fetchedqr.url} id="qr-download" download="new-file">Click here to download.</a>
+        qrDownload.innerHTML = 
+        // <a href=${fetchedqr.url} id="qr-download" download="new-file">Click here to download.</a>
+        `
         <button onclick="downloadImage("${fetchedqr.url}")" id="download-btn">Download External Image</button>
         `
         qrDownload.href = fetchedqr.url
@@ -198,8 +238,8 @@ async function getqr(text) {
 
 async function downloadImage(image) {
     // const imageUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=text';
-    console.log("Image",image);
     const imageUrl = image;
+    console.log("Image",image);
     const imageName = 'new-qr.png';
 
     // try {
