@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Scanner & Generator</title>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        h1{
+            text-align: center;
+        }
+        .container{
+            width: 450px;
+            height: 500px;
+            background-color: aqua;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: start;
+            align-items: center;
+        }
+        .links button{
+            width: 50%;
+            height: 100%;
+            cursor: pointer;
+        }
+        .links{
+            width: 100%;
+            height: 10%;
+            display: flex;
+        }
+        .containe{
+            height: 100px;
+            width: 100px;
+            color: red;
+        }
+        .scanner{
+            width: 100%;
+            height: 90%;
+            /* background-color: black; */
+            display: block;
+        }
+        .generator{
+            width: 100%;
+            height: 90%;
+            /* background-color: green; */
+            display: none;
+        }
+        .generator .img{
+            height: 50%;
+            width: 100%;
+            /* background-color: aquamarine; */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            /* border: 2px solid black; */
+        }
+        .generator img{
+            width: 60%;
+            height: 100%;
+        }
+        .input{
+            width: 100%;
+            height: 90px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        input{
+            width: 90%;
+            height: 40px;
+            display: block;
+            padding: 10px;
+            font-size: 18px;
+            outline: none;
+            border: none;
+            border-radius: 4px;
+        }
+        .input button{
+            width: 50%;
+            height: 30px;
+            border-radius: 4px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            cursor: pointer;
+        }
+        p{
+            margin-top: 20px;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="links">
+            <button id="scan">QR Scanner</button>
+            <button id="generate">QR Generator</button>
+        </div>
+        <div class="scanner" id="scanner">
+            <h1>Scan or upload qr</h1>
+            <!-- MAX_FILE_SIZE (maximum file size in bytes) must precede the file input field used to upload the QR code image -->
+            <!-- The "name" of the input field has to be "file" as it is the name of the POST parameter -->
+            <form enctype="multipart/form-data" action="http://api.qrserver.com/v1/read-qr-code/" method="POST">
+                <input type="hidden" name="MAX_FILE_SIZE" value="1048576" />
+                Choose QR code image to read/scan: <input name="file" type="file" />
+                <input type="submit" value="Read QR code" />
+            </form>
+        </div>
+        <div class="generator" id="generator">
+            <h1>Generate QR</h1>
+            <div class="input">
+                <input type="text" placeholder="Input text or URL..." id="textToGenerate">
+                <button id="generateBtn" disabled>Generate QR</button>
+            </div>
+            <div class="img">
+                <img src="./Aunty tomi 2.png" alt="" id="qrimage">
+                <a href="./Aunty tomi 2.png" id="qr-download" download="new-file">Click here to download.</a>
+                <p id="qr-info"></p>
+                <!-- <button id="download-btn">Download External Image</button> -->
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+let scan = document.getElementById("scan")
+let generate = document.getElementById("generate")
+let scanDiv = document.getElementById("scanner")
+let generateDiv = document.getElementById("generator")
+let qrimage = document.getElementById("qrimage")
+let generateBtn = document.getElementById("generateBtn")
+let text = document.getElementById("textToGenerate")
+let qrInfo = document.getElementById("qr-info")
+let qrDownload = document.getElementById("qr-download")
+
+scan.addEventListener("click", ()=>{
+    generateDiv.style.display = "none"
+    scanDiv.style.display = "block"
+})
+
+generate.addEventListener("click", ()=>{
+    scanDiv.style.display = "none"
+    generateDiv.style.display = "block"
+    text.value = ""
+    generateBtn.disabled = true
+    qrimage.src = "./Aunty tomi 2.png"
+})
+
+text.addEventListener("input", ()=>{
+    if(text.value){
+        generateBtn.disabled = false
+    }else{
+        generateBtn.disabled = true
+    }
+})
+
+generateBtn.addEventListener("click", ()=>{
+    qrimage.src = "./spinner.png"
+    text = document.getElementById("textToGenerate").value
+    qrInfo.innerText = `Text/URL: "${text}"`
+    console.log(`Text/URL: "${text}"`);
+    getqr(text)
+})
+
+async function getqr(text) {
+    let url = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${text}`
+    let fetchedqr = ""
+    fetchedqr = await fetch(url)
+    if(fetchedqr.status == 200 ){
+        qrimage.src = fetchedqr.url
+        qrDownload.innerHTML = `
+        <a href=${fetchedqr.url} id="qr-download" download="new-file">Click here to download.</a>
+        <button onclick="downloadImage("${fetchedqr.url}")" id="download-btn">Download External Image</button>
+        `
+        qrDownload.href = fetchedqr.url
+        console.log("URL",fetchedqr.url);
+        console.log(fetchedqr);
+        text = document.getElementById("textToGenerate")
+        text.value = ""
+        generateBtn.disabled = true
+        return
+    }else{
+        qrimage.src = "./Aunty tomi 2.png"
+    }
+}
+
+async function downloadImage(image) {
+    // const imageUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=text';
+    console.log("Image",image);
+    const imageUrl = image;
+    const imageName = 'new-qr.png';
+
+    // try {
+    //     const response = await fetch(imageUrl, { mode: 'cors' });
+    //     const blobImage = await response.blob();
+    //     const href = URL.createObjectURL(blobImage);
+
+    //     const anchorElement = document.createElement('a');
+    //     anchorElement.href = href;
+    //     anchorElement.download = imageName;
+
+    //     document.body.appendChild(anchorElement);
+    //     anchorElement.click();
+
+    //     document.body.removeChild(anchorElement);
+    //     window.URL.revokeObjectURL(href); // Clean up the temporary URL
+    // } catch (error) {
+    //     console.error('Error downloading image: ', error);
+    //     alert('Could not download image. Cross-origin restrictions might apply or the file is unavailable.');
+    // }
+}
+// document.getElementById('download-btn').addEventListener('click', downloadImage);
+</script>
+</html>
